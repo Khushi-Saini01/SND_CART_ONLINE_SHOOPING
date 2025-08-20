@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SND Cart — Local Fashion, Fast</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Animation library -->
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <!-- Topbar -->
+  <nav class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-bold">SC</div>
+        <span class="font-extrabold text-xl text-indigo-700">SND Cart</span>
+      </a>
+      <div class="flex items-center gap-4">
+        <a href="cart.html" class="relative px-3 py-2 rounded-xl border hover:bg-gray-100">🛒
+          <span class="ml-1">Cart</span>
+          <span id="cartCount" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-2">0</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="text-center py-12 bg-gradient-to-r from-indigo-500 to-rose-500 text-white" data-aos="fade-down">
+    <h1 class="text-4xl md:text-5xl font-extrabold mb-3">Instant Fashion from Stores Near You</h1>
+    <p class="opacity-90 max-w-3xl mx-auto">
+      Pick outfits from local boutiques, <span class="font-semibold">Try & Buy</span> at home,
+      keep only what fits. Delivery in under an hour.
+    </p>
+    <div class="mt-6">
+      <a href="#shops" class="inline-block px-6 py-3 bg-white text-indigo-700 font-semibold rounded-2xl shadow hover:bg-gray-100">
+        Explore Shops
+      </a>
+    </div>
+  </section>
+
+  <!-- Local Shops -->
+  <section id="shops" class="max-w-7xl mx-auto px-4 py-10">
+    <div class="mb-6 flex items-end justify-between gap-4">
+      <div>
+        <h2 class="text-3xl font-extrabold text-indigo-700">Local Shops Near You 🏬</h2>
+        <p class="text-gray-600">Tap a shop to view its catalog.</p>
+      </div>
+      <div class="w-full max-w-md">
+        <input id="shopSearch" class="w-full px-4 py-2 rounded-xl border focus:outline-none focus:ring-2 focus:ring-indigo-500"
+               placeholder="Search shops (e.g., Vogue, Threads)"/>
+      </div>
+    </div>
+
+    <div id="shopGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+  </section>
+
+  <!-- Featured Products -->
+  <section class="max-w-7xl mx-auto px-4 py-12">
+    <h2 class="text-3xl font-extrabold text-indigo-700 mb-6" data-aos="fade-left">Featured Outfits ✨</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="featuredGrid"></div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="bg-gradient-to-r from-indigo-50 to-rose-50 py-12">
+    <div class="max-w-4xl mx-auto px-4 text-center">
+      <h2 class="text-3xl font-extrabold text-indigo-700 mb-6" data-aos="fade-up">What Our Customers Say 💬</h2>
+      <div class="overflow-hidden relative">
+        <div id="testimonialSlider" class="flex transition-transform duration-700">
+          <div class="min-w-full px-6">
+            <p class="text-lg italic">“SND Cart made fashion shopping so easy! Loved the Try & Buy feature.”</p>
+            <p class="mt-3 font-semibold">— Aditi, Chandigarh</p>
+          </div>
+          <div class="min-w-full px-6">
+            <p class="text-lg italic">“Got my outfit in 30 mins 🚀 Super fast delivery!”</p>
+            <p class="mt-3 font-semibold">— Rohan, Alwar</p>
+          </div>
+          <div class="min-w-full px-6">
+            <p class="text-lg italic">“Great quality and amazing local shop collection 👗”</p>
+            <p class="mt-3 font-semibold">— Simran, Delhi</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="py-10 text-center text-gray-500 text-sm">
+    © 2025 SND Cart • Prototype
+  </footer>
+
+  <!-- JS -->
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script>
+    AOS.init();
+
+    // ---------- Utils ----------
+    function getCart(){
+      return JSON.parse(localStorage.getItem('cart') || '[]');
+    }
+    function saveCart(cart){
+      localStorage.setItem('cart', JSON.stringify(cart));
+    }
+    function getCartCount(){
+      return getCart().reduce((a, it) => a + (it.qty || 1), 0);
+    }
+    function setCartCount(){
+      const el = document.getElementById('cartCount');
+      if(el) el.textContent = getCartCount();
+    }
+    function addToCart(item){
+      let cart = getCart();
+      const idx = cart.findIndex(p => p.name === item.name);
+      if(idx >= 0){
+        cart[idx].qty += 1;
+      } else {
+        cart.push({...item, qty: 1});
+      }
+      saveCart(cart);
+      setCartCount();
+    }
+
+    // ---------- Featured Products ----------
+    const PRODUCTS = [
+      {
+        name: "Casual Summer Dress",
+        price: 1299,
+        img: "https://stylesweekly.com/wp-content/uploads/2015/12/23-great-looking-casual-summer-dresses-1.jpg"
+      },
+      {
+        name: "Men’s Stylish Jacket",
+        price: 2199,
+        img: "https://i5.walmartimages.com/seo/Mens-Hooded-Outdoor-Jacket-Solid-Color-Long-Sleeve-Zipper-Multi-Pocket-Male-Autumn-Nylon-Rain-Wool-Blanket-Coats-Men-Stylish-Jackets-Hoods-Insulated_a6ee0e96-824d-4883-b2ca-e0f93bb14589.1109f8aeac38ab3bc18c5581fdd11705.jpeg"
+      },
+      {
+        name: "Trendy Sneakers",
+        price: 1799,
+        img: "https://i.pinimg.com/originals/01/64/3f/01643f363f75f0a5cb8c48f6f56997c2.png"
+      },
+      {
+        name: "Office Formal Shirt",
+        price: 999,
+        img: "https://5.imimg.com/data5/ECOM/Default/2023/4/302935881/YY/FK/ID/70232485/darkblueshirt-7d20d90d-2661-409e-9af1-1c38ebdf3fef-500x500.jpg"
+      }
+    ];
+
+    const featuredGrid = document.getElementById('featuredGrid');
+    PRODUCTS.forEach(p => {
+      featuredGrid.insertAdjacentHTML("beforeend", `
+        <div class="bg-white rounded-2xl shadow hover:shadow-xl transition p-4 flex flex-col" data-aos="zoom-in">
+          <img src="${p.img}" alt="${p.name}" class="rounded-xl mb-3 h-56 w-full object-cover"/>
+          <h3 class="font-bold">${p.name}</h3>
+          <p class="text-gray-600 mb-3">₹${p.price}</p>
+          <button onclick='addToCart(${JSON.stringify(p)})' class="mt-auto w-full bg-indigo-600 text-white py-2 rounded-xl hover:bg-indigo-700">Add to Cart</button>
+        </div>
+      `);
+    });
+
+    // ---------- Shops ----------
+    const SHOPS = [
+      { name: "Trendy Threads", area: "Sector 17 Market", img: "https://c.pxhere.com/images/8a/7f/65fbd5583a70d600f409b62eca79-1611896.jpg!d", eta: "25–40 min" },
+      { name: "Urban Vogue", area: "Alwar City Mall", img: "https://media.timeout.com/images/101714607/image.jpg", eta: "30–50 min" },
+      { name: "Campus Closet", area: "University Road", img: "https://media.timeout.com/images/100515315/image.jpg", eta: "35–55 min" },
+      { name: "Office Attire Co.", area: "Business Bay", img: "https://mir-s3-cdn-cf.behance.net/project_modules/disp/8c712228644879.56053848bf47d.JPG", eta: "20–35 min" }
+    ];
+    const grid = document.getElementById('shopGrid');
+    function renderShops(list){
+      grid.innerHTML = '';
+      list.forEach(s => {
+        const href = `shop.html?shop=${encodeURIComponent(s.name)}`;
+        grid.insertAdjacentHTML('beforeend', `
+          <a href="${href}" class="bg-white rounded-2xl shadow hover:shadow-lg transition p-5 cursor-pointer block" data-aos="zoom-in">
+            <div class="relative">
+              <img src="${s.img}" alt="${s.name}" class="w-full h-44 object-cover rounded-xl mb-4"/>
+              <div class="absolute top-2 left-2 bg-white/90 text-xs px-2 py-1 rounded">${s.eta}</div>
+            </div>
+            <h3 class="font-bold text-lg">${s.name}</h3>
+            <p class="text-sm text-gray-600">${s.area}</p>
+            <div class="mt-3">
+              <span class="inline-block text-indigo-700 text-sm font-semibold">View catalog →</span>
+            </div>
+          </a>
+        `);
+      });
+    }
+    renderShops(SHOPS);
+    document.getElementById('shopSearch').addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase();
+      renderShops(
+        SHOPS.filter(s => s.name.toLowerCase().includes(q) || s.area.toLowerCase().includes(q))
+      );
+    });
+
+    // ---------- Testimonials Slider ----------
+    let index = 0;
+    const slider = document.getElementById('testimonialSlider');
+    setInterval(() => {
+      index = (index + 1) % 3;
+      slider.style.transform = `translateX(-${index * 100}%)`;
+    }, 3000);
+
+    // ---------- Init ----------
+    setCartCount();
+  </script>
+</body>
+</html>
