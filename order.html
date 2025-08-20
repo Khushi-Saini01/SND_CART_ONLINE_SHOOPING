@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Your Order — SND Cart</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Background Pattern */
+    body {
+      background: linear-gradient(135deg, #f8f4ff, #fdfdff);
+      position: relative;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: absolute;
+      top: -50px;
+      left: -50px;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, #e0aaff40, transparent 70%);
+      border-radius: 50%;
+      z-index: 0;
+      animation: float1 8s ease-in-out infinite alternate;
+    }
+    body::after {
+      content: "";
+      position: absolute;
+      bottom: -80px;
+      right: -80px;
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle, #c77dff30, transparent 70%);
+      border-radius: 50%;
+      z-index: 0;
+      animation: float2 10s ease-in-out infinite alternate;
+    }
+    @keyframes float1 {
+      from { transform: translateY(0px); }
+      to { transform: translateY(30px); }
+    }
+    @keyframes float2 {
+      from { transform: translateY(0px); }
+      to { transform: translateY(-30px); }
+    }
+    /* Ensure content is above background */
+    main, nav, footer {
+      position: relative;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body class="text-gray-900">
+
+  <!-- Topbar -->
+  <nav class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-gray-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-2xl bg-[#c77dff] flex items-center justify-center text-white font-bold shadow">SC</div>
+        <span class="font-extrabold text-xl text-[#6c1cbf]">SND Cart</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <main class="max-w-3xl mx-auto px-4 py-10">
+    <h1 class="text-3xl font-extrabold text-[#6c1cbf] mb-4">Order Tracking</h1>
+
+    <!-- Order ID -->
+    <p id="orderIdText" class="mb-4 text-gray-600 text-lg"></p>
+
+    <!-- Order Summary -->
+    <div id="orderSummary" class="bg-white shadow-md rounded-2xl p-6 border border-gray-100"></div>
+
+    <!-- Tracking -->
+    <h2 class="text-xl font-bold mt-8 mb-3 text-[#6c1cbf]">Tracking Status</h2>
+    <div class="space-y-6" id="trackingSteps"></div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="py-10 text-center text-gray-500 text-sm">
+    © 2025 SND Cart • Prototype
+  </footer>
+
+  <script>
+    // --------- Read Order ID ---------
+    const params = new URLSearchParams(window.location.search);
+    const orderId = params.get("orderId") || "ORD000000";
+    document.getElementById("orderIdText").textContent = "Your Order ID: " + orderId;
+
+    // --------- Read Last Order ---------
+    const orderData = JSON.parse(localStorage.getItem("lastOrder") || "{}");
+    const summaryEl = document.getElementById("orderSummary");
+
+    if(orderData && orderData.items){
+      let itemsHTML = orderData.items.map(it => `
+        <div class="flex items-center justify-between border-b py-3">
+          <div>
+            <p class="font-semibold text-gray-800">${it.name}</p>
+            <p class="text-sm text-gray-500">${it.shop} • Size ${it.size} • ${it.color}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-gray-600">₹${it.price} × ${it.qty || 1}</p>
+            <p class="font-semibold text-[#6c1cbf]">₹${it.price * (it.qty || 1)}</p>
+          </div>
+        </div>
+      `).join("");
+
+      summaryEl.innerHTML = `
+        <h2 class="text-xl font-bold mb-4 text-[#6c1cbf]">Order Summary</h2>
+        ${itemsHTML}
+        <div class="flex items-center justify-between mt-4 pt-4 border-t font-bold text-lg text-[#6c1cbf]">
+          <span>Total</span><span>₹${orderData.total}</span>
+        </div>
+      `;
+    } else {
+      summaryEl.innerHTML = `<p class="text-gray-500">No order details found.</p>`;
+    }
+
+    // --------- Tracking Steps ---------
+    const steps = [
+      "Order Placed",
+      "Packed",
+      "Shipped",
+      "Out for Delivery",
+      "Delivered ✅"
+    ];
+
+    const container = document.getElementById("trackingSteps");
+    steps.forEach((step, idx) => {
+      container.insertAdjacentHTML("beforeend", `
+        <div id="step${idx}" class="flex items-center gap-4 p-4 rounded-xl border bg-white text-gray-500 transition duration-500">
+          <div class="w-8 h-8 flex items-center justify-center rounded-full border font-bold">${idx+1}</div>
+          <span class="font-semibold">${step}</span>
+        </div>
+      `);
+    });
+
+    // Animate steps one by one
+    let current = 0;
+    function highlightStep() {
+      if(current >= steps.length) return;
+      const el = document.getElementById("step"+current);
+      el.classList.remove("text-gray-500","border");
+      el.classList.add("text-[#6c1cbf]","bg-[#f5e8ff]","border-[#c77dff]","shadow-md");
+      current++;
+      setTimeout(highlightStep, 1500);
+    }
+    highlightStep();
+  </script>
+</body>
+</html>

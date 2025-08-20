@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SND Cart — Shop Catalog</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Fade + slide animation */
+    .fade-in-up {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.6s forwards;
+    }
+    @keyframes fadeUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <!-- Topbar -->
+  <nav class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-bold">SC</div>
+        <span class="font-extrabold text-xl text-indigo-700">SND Cart</span>
+      </a>
+      <div class="flex items-center gap-4">
+        <a href="cart.html" class="relative px-3 py-2 rounded-xl border hover:bg-gray-100 transition">🛒
+          <span class="ml-1">Cart</span>
+          <span id="cartCount" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-2">0</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Shop Header -->
+  <header class="max-w-7xl mx-auto px-4 pt-8 pb-3 text-center">
+    <h1 id="shopTitle" class="text-3xl font-extrabold bg-gradient-to-r from-indigo-600 to-rose-500 bg-clip-text text-transparent">Shop</h1>
+    <p id="shopEta" class="mt-2 inline-block px-3 py-1 text-sm bg-indigo-100 text-indigo-700 rounded-full"></p>
+  </header>
+
+  <!-- Search + Sort -->
+  <main class="max-w-7xl mx-auto px-4 pb-16">
+    <div class="mb-6 flex flex-wrap items-end gap-3 justify-center">
+      <input id="query" class="px-4 py-2 rounded-xl border focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full md:w-96 shadow-sm"
+             placeholder="Search in this shop (e.g., jeans, dress, tee)"/>
+      <select id="sortBy" class="px-4 py-2 rounded-xl border shadow-sm">
+        <option value="relevance">Sort: Relevance</option>
+        <option value="priceAsc">Price: Low to High</option>
+        <option value="priceDesc">Price: High to Low</option>
+      </select>
+    </div>
+
+    <!-- Catalog -->
+    <div id="catalog" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </main>
+
+  <!-- Floating Cart Shortcut -->
+  <a href="cart.html" class="fixed bottom-6 right-6 bg-indigo-600 text-white px-5 py-3 rounded-full shadow-lg hover:bg-indigo-700 transition">
+    🛒 Checkout
+  </a>
+
+  <script>
+    // ---------- Utils ----------
+    function getCart(){ return JSON.parse(localStorage.getItem('cart') || '[]'); }
+    function setCart(cart){ localStorage.setItem('cart', JSON.stringify(cart)); }
+    function badgeCount(){ return getCart().reduce((a, it) => a + (it.qty || 1), 0); }
+    function refreshCartBadge(){ document.getElementById('cartCount').textContent = badgeCount(); }
+
+    // ---------- URL / Shop ----------
+    const params = new URLSearchParams(location.search);
+    const SHOP = decodeURIComponent(params.get('shop') || 'Trendy Threads');
+
+    const SHOP_META = {
+      "Trendy Threads": { eta: "25–40 min" },
+      "Urban Vogue": { eta: "30–50 min" },
+      "Campus Closet": { eta: "35–55 min" },
+      "Office Attire Co.": { eta: "20–35 min" }
+    };
+
+    // ---------- Catalog per Shop ----------
+    const PRODUCTS = [
+      { shop: "Trendy Threads", id: "TT-101", name: "Slim Fit Blue Jeans", price: 1999, img: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=900&q=80", sizes: ["28","30","32","34","36"], colors: ["Blue","Black"], category: "jeans" },
+      { shop: "Trendy Threads", id: "TT-102", name: "Basic White Tee", price: 799, img: "https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb?auto=format&fit=crop&w=900&q=80", sizes: ["S","M","L","XL"], colors: ["White","Black"], category: "tops" },
+      { shop: "Urban Vogue", id: "UV-201", name: "Sequin Party Dress", price: 3299, img: "https://i.pinimg.com/originals/f8/8a/98/f88a984ed9633e307ce2fac68147a64f.jpg", sizes: ["S","M","L","XL"], colors: ["Rose","Black"], category: "party" },
+      { shop: "Urban Vogue", id: "UV-202", name: "Bodycon Dress", price: 2499, img: "https://cdnd.lystit.com/photos/asos/933270-Black-e0c1aa42-.jpeg", sizes: ["S","M","L","XL"], colors: ["Maroon","Navy"], category: "western" },
+      { shop: "Campus Closet", id: "CC-301", name: "Oversized Hoodie", price: 1599, img: "https://i5.walmartimages.com/seo/Cute-Hoodies-for-Teen-Girls-Trendy-Warm-Teen-Girls-Casual-Sweatshirts-Oversized-Long-Sleeve-Color-Block-Tops_8bac5b92-0140-48a1-980a-22cade9aef43.8a9070c1938003fc1a3dbceeb77b50e5.jpeg", sizes: ["S","M","L"], colors: ["Gray","Black","Beige"], category: "college" },
+      { shop: "Campus Closet", id: "CC-302", name: "Campus Denim Jacket", price: 2199, img: "https://www.pngplay.com/wp-content/uploads/15/Denim-Jacket-Transparent-Free-PNG.png", sizes: ["S","M","L","XL"], colors: ["Blue","Black"], category: "college" },
+      { shop: "Office Attire Co.", id: "OA-401", name: "Classic Blazer", price: 2599, img: "https://www.beyoung.in/blog/wp-content/uploads/2022/02/Shirt-Combination-with-blazer-1024x709.jpg", sizes: ["S","M","L","XL"], colors: ["Navy","Charcoal"], category: "office" },
+      { shop: "Office Attire Co.", id: "OA-402", name: "Formal Trousers", price: 2299, img: "https://i.etsystatic.com/23713226/r/il/4b634e/4943533398/il_570xN.4943533398_rd69.jpg", sizes: ["30","32","34","36"], colors: ["Black","Gray"], category: "office" },
+    ];
+
+    // ---------- Render ----------
+    const title = document.getElementById('shopTitle');
+    const shopEta = document.getElementById('shopEta');
+    title.textContent = `${SHOP} — Catalog`;
+    shopEta.textContent = `ETA: ${SHOP_META[SHOP]?.eta || '30–45 min'}`;
+
+    const input = document.getElementById('query');
+    const sortBy = document.getElementById('sortBy');
+    const catalog = document.getElementById('catalog');
+
+    function draw(){
+      const q = (input.value || '').toLowerCase();
+      let list = PRODUCTS.filter(p => p.shop === SHOP)
+                         .filter(p => !q || p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
+
+      if (sortBy.value === 'priceAsc')  list.sort((a,b)=>a.price-b.price);
+      if (sortBy.value === 'priceDesc') list.sort((a,b)=>b.price-a.price);
+
+      catalog.innerHTML = '';
+      list.forEach((p,i) => {
+        const sizeOpts = p.sizes.map(s=>`<option>${s}</option>`).join('');
+        const colorOpts = p.colors.map(c=>`<option>${c}</option>`).join('');
+        catalog.insertAdjacentHTML('beforeend', `
+          <div class="bg-white rounded-2xl shadow overflow-hidden fade-in-up" style="animation-delay:${i*0.1}s">
+            <div class="overflow-hidden">
+              <img src="${p.img}" alt="${p.name}" class="w-full h-56 object-cover transform hover:scale-105 transition duration-300">
+            </div>
+            <div class="p-4">
+              <div class="flex items-center justify-between">
+                <h3 class="font-bold">${p.name}</h3>
+                <span class="font-semibold">₹${p.price}</span>
+              </div>
+              <p class="text-sm text-gray-600">${SHOP}</p>
+              <div class="grid grid-cols-2 gap-3 mt-3 text-sm">
+                <label class="block">Size
+                  <select id="size-${p.id}" class="mt-1 w-full border rounded-xl px-2 py-1">
+                    ${sizeOpts}
+                  </select>
+                </label>
+                <label class="block">Color
+                  <select id="color-${p.id}" class="mt-1 w-full border rounded-xl px-2 py-1">
+                    ${colorOpts}
+                  </select>
+                </label>
+              </div>
+              <div class="flex gap-2 mt-4">
+                <button class="flex-1 px-3 py-2 rounded-xl border hover:bg-gray-50 transition" onclick="buyNow('${p.id}')">Buy Now</button>
+                <button class="flex-1 px-3 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition" onclick="addToCart('${p.id}')">Add to Cart</button>
+              </div>
+            </div>
+          </div>
+        `);
+      });
+    }
+
+    function addToCart(pid){
+      const p = PRODUCTS.find(x => x.id === pid);
+      const size = document.getElementById(`size-${p.id}`).value;
+      const color = document.getElementById(`color-${p.id}`).value;
+
+      const cart = getCart();
+      const idx = cart.findIndex(it => it.id===p.id && it.size===size && it.color===color && it.shop===p.shop);
+      if (idx >= 0) cart[idx].qty = (cart[idx].qty || 1) + 1;
+      else cart.push({ id:p.id, name:p.name, price:p.price, img:p.img, size, color, shop:p.shop, qty:1 });
+
+      setCart(cart);
+      refreshCartBadge();
+
+      // Fancy notification instead of alert
+      const toast = document.createElement('div');
+      toast.className = "fixed bottom-6 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-6 py-3 rounded-full shadow-lg animate-bounce";
+      toast.textContent = `${p.name} (${size}, ${color}) added to cart!`;
+      document.body.appendChild(toast);
+      setTimeout(()=>toast.remove(), 2000);
+    }
+
+    function buyNow(pid){
+      addToCart(pid);
+      location.href = 'cart.html';
+    }
+
+    input.addEventListener('input', draw);
+    sortBy.addEventListener('change', draw);
+    draw();
+    refreshCartBadge();
+  </script>
+</body>
+</html>

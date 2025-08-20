@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Your Cart — SND Cart</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <!-- Topbar -->
+  <nav class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-[#c77dff] shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-2xl bg-[#c77dff] flex items-center justify-center text-white font-bold">SC</div>
+        <span class="font-extrabold text-xl text-[#c77dff]">SND Cart</span>
+      </a>
+      <div class="flex items-center gap-4">
+        <span class="relative px-3 py-2 rounded-xl border bg-white">
+          🛒 <span class="ml-1 font-medium">Cart</span>
+          <span id="cartCount" class="absolute -top-2 -right-2 bg-[#e0aaff] text-white text-xs rounded-full px-2">0</span>
+        </span>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Cart Items -->
+    <section class="lg:col-span-2">
+      <h1 class="text-3xl font-extrabold text-[#c77dff] mb-4">Your Cart</h1>
+      <div id="cartList" class="space-y-4"></div>
+
+      <div class="mt-6 flex gap-3">
+        <a href="index.html" class="px-4 py-2 rounded-xl border border-[#c77dff] text-[#c77dff] hover:bg-[#c77dff] hover:text-white transition">← Continue Shopping</a>
+        <button id="clearCart" class="px-4 py-2 rounded-xl border border-red-400 text-red-500 hover:bg-red-50">Clear Cart</button>
+      </div>
+    </section>
+
+    <!-- Order Summary -->
+    <aside class="lg:col-span-1">
+      <div class="bg-white rounded-2xl shadow-lg border border-[#e0aaff] p-5">
+        <h2 class="text-xl font-bold mb-3 text-[#c77dff]">Order Summary</h2>
+        <div class="text-sm text-gray-700 flex items-center justify-between">
+          <span>Subtotal</span><span id="subtotal">₹0</span>
+        </div>
+        <div class="text-sm text-gray-700 flex items-center justify-between mt-1">
+          <span>Delivery</span><span id="delivery">₹0</span>
+        </div>
+        <div class="border-t mt-3 pt-3 flex items-center justify-between font-semibold text-gray-900">
+          <span>Total</span><span id="grandTotal">₹0</span>
+        </div>
+
+        <label class="block mt-4 text-sm font-semibold text-gray-700">Payment Method</label>
+        <select id="paymentMethod" class="w-full mt-2 p-2 border border-[#c77dff] rounded-xl focus:ring-2 focus:ring-[#c77dff]">
+          <option value="razorpay">Razorpay (UPI / Card)</option>
+          <option value="cod">Cash on Delivery</option>
+        </select>
+
+        <button id="checkoutBtn" class="mt-4 w-full bg-[#c77dff] hover:bg-[#e0aaff] text-white font-bold py-3 rounded-xl transition">Pay & Order</button>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="py-10 text-center text-gray-500 text-sm">
+    © 2025 SND Cart • Prototype
+  </footer>
+  <!-- Inside checkout.html -->
+    <button onclick="window.location.href='delv.html'">
+    Confirm Order
+</button>
+
+  <script>
+    // -------- Cart state helpers --------
+    function getCart(){ return JSON.parse(localStorage.getItem('cart') || '[]'); }
+    function setCart(c){ localStorage.setItem('cart', JSON.stringify(c)); }
+    function countBadge(){
+      return getCart().reduce((a, it) => a + (it.qty || 1), 0);
+    }
+    function refreshBadge(){
+      document.getElementById('cartCount').textContent = countBadge();
+    }
+
+    const cartList = document.getElementById('cartList');
+    const subtotalEl = document.getElementById('subtotal');
+    const deliveryEl = document.getElementById('delivery');
+    const grandEl = document.getElementById('grandTotal');
+
+    function rupees(n){ return '₹' + n.toLocaleString('en-IN'); }
+
+    function render(){
+      const cart = getCart();
+      cartList.innerHTML = '';
+
+      if(cart.length === 0){
+        cartList.innerHTML = `<div class="bg-white border border-[#e0aaff] rounded-2xl p-6 text-gray-600 text-center">🛍️ Your cart is empty.</div>`;
+      } else {
+        cart.forEach((it, idx) => {
+          cartList.insertAdjacentHTML('beforeend', `
+            <div class="bg-white rounded-2xl border border-[#e0aaff] shadow-sm p-4 flex items-start gap-4">
+              <img src="${it.img}" class="w-28 h-28 object-cover rounded-xl border border-[#c77dff]" alt="${it.name}">
+              <div class="flex-1">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h3 class="font-bold text-[#c77dff]">${it.name}</h3>
+                    <p class="text-sm text-gray-600">${it.shop} • Size ${it.size} • ${it.color}</p>
+                  </div>
+                  <button class="text-sm text-red-600 hover:underline" onclick="removeItem(${idx})">Remove</button>
+                </div>
+                <div class="flex items-center justify-between mt-3">
+                  <div class="flex items-center gap-2">
+                    <button class="px-3 py-1 rounded-xl border border-gray-300 hover:bg-gray-100" onclick="decrement(${idx})">−</button>
+                    <span class="w-8 text-center font-semibold">${it.qty || 1}</span>
+                    <button class="px-3 py-1 rounded-xl border border-gray-300 hover:bg-gray-100" onclick="increment(${idx})">+</button>
+                  </div>
+                  <div class="font-semibold text-[#e0aaff]">${rupees(it.price * (it.qty || 1))}</div>
+                </div>
+              </div>
+            </div>
+          `);
+        });
+      }
+
+      const sub = cart.reduce((a, it) => a + it.price * (it.qty || 1), 0);
+      const delivery = cart.length ? 29 : 0;
+      const total = sub + delivery;
+
+      subtotalEl.textContent = rupees(sub);
+      deliveryEl.textContent = rupees(delivery);
+      grandEl.textContent = rupees(total);
+
+      refreshBadge();
+    }
+
+    function removeItem(i){
+      const cart = getCart();
+      cart.splice(i, 1);
+      setCart(cart);
+      render();
+    }
+    function increment(i){
+      const cart = getCart();
+      cart[i].qty = (cart[i].qty || 1) + 1;
+      setCart(cart);
+      render();
+    }
+    function decrement(i){
+      const cart = getCart();
+      const q = (cart[i].qty || 1) - 1;
+      if(q <= 0) cart.splice(i,1); else cart[i].qty = q;
+      setCart(cart);
+      render();
+    }
+
+    document.getElementById('clearCart').addEventListener('click', () => {
+      if(confirm('Clear entire cart?')){ setCart([]); render(); }
+    });
+
+    document.getElementById('checkoutBtn').addEventListener('click', () => {
+      const method = document.getElementById('paymentMethod').value;
+      const cart = getCart();
+      if(cart.length === 0){ alert('Your cart is empty.'); return; }
+
+      const sub = cart.reduce((a, it) => a + it.price * (it.qty || 1), 0);
+      const amount = sub + 29;
+
+      const orderId = "ORD" + Math.floor(Math.random()*1000000);
+      const orderDetails = { id: orderId, items: cart, total: amount };
+      localStorage.setItem("lastOrder", JSON.stringify(orderDetails));
+
+      if(method === 'cod'){
+        localStorage.removeItem("cart");
+        window.location.href = "order.html?orderId=" + orderId;
+        return;
+      }
+
+      const RZP_KEY = 'rzp_test_xxxxxxxx'; // replace with Razorpay key
+      if(RZP_KEY.includes('xxxx')){
+        localStorage.removeItem("cart");
+        window.location.href = "order.html?orderId=" + orderId;
+        return;
+      }
+
+      const rzp = new Razorpay({
+        key: RZP_KEY,
+        amount: amount * 100,
+        currency: 'INR',
+        name: 'SND Cart',
+        description: 'Order Payment',
+        handler: function (response){
+          localStorage.removeItem("cart");
+          window.location.href = "order.html?orderId=" + orderId;
+        },
+        prefill: { name: 'SND Cart User', email: 'user@example.com', contact: '9999999999' },
+        theme: { color: '#c77dff' }
+      });
+      rzp.open();
+    });
+
+    render();
+  </script>
+</body>
+</html>
